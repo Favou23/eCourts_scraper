@@ -135,12 +135,12 @@ Usage example (browser):
 ## Limitations & caveats
 
 - CAPTCHA: you must manually type the CAPTCHA displayed in the UI. If the CAPTCHA is incorrect the eCourts server will reject the request and the UI will display an error.
-- PDF discovery: the scraper looks for direct `.pdf` links in the returned cause list HTML. Some cause lists link to intermediate pages that contain the PDF — in that case additional link-following logic is required. Tell me if you want me to add follow-link extraction.
+- PDF discovery: the scraper looks for direct `.pdf` links in the returned cause list HTML. Some cause lists link to intermediate pages that contain the PDF 
 - Rate-limiting: repeated automated requests to eCourts can trigger rate limits. For bulk downloads, we should add polite rate-limiting and retries.
 
 ## Troubleshooting
 
-- Empty dropdowns: if District or Complex dropdowns appear empty, open the browser devtools Network tab and check whether `/api/districts` or `/api/complexes` returned data or an error. The server will attempt to fetch current data from eCourts; network errors or site-side changes can cause empty results.
+results.
 - Captcha errors: if the submitted CAPTCHA is wrong you will get an error page. Try refreshing the page (which requests a fresh CAPTCHA) and re-try.
 
 ## Tests
