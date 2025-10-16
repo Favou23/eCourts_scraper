@@ -1,4 +1,4 @@
-Intern Task: eCourts Scraper
+ eCourts Scraper
 
 This small project fetches court listings from eCourts and checks whether a case (by CNR or case details) is listed today or tomorrow. It can optionally download case PDFs and save results as JSON.
 
