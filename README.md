@@ -1,32 +1,3 @@
- eCourts Scraper
-
-This small project fetches court listings from eCourts and checks whether a case (by CNR or case details) is listed today or tomorrow. It can optionally download case PDFs and save results as JSON.
-
-
-Setup
-
-- Create a virtualenv and install dependencies (PowerShell):
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-```
-
-CLI usage
-
-- Check a case by CNR:
-
-```powershell
-python -m ecourts_scraper.cli check --cnr <CNR> [--download-pdf]
-```
-
-- Check by case type, number, year:
-
-```powershell
-python -m ecourts_scraper.cli check --type "Criminal" --number 123 --year 2024
-```
-
 # Intern Task: eCourts Scraper
 
 This project implements a CLI and a small web UI that fetches court cause-lists from the official eCourts service and helps you:
