@@ -1,4 +1,4 @@
-# Intern Task: eCourts Scraper
+# eCourts Scraper
 
 This project implements a CLI and a small web UI that fetches court cause-lists from the official eCourts service and helps you:
 
