@@ -1,0 +1,11 @@
+body{font-family:Segoe UI, Roboto, Arial, sans-serif;background:#f4f7fb;color:#222;margin:0;padding:0}
+.container{max-width:900px;margin:28px auto;background:#fff;padding:24px;border-radius:8px;box-shadow:0 6px 18px rgba(25,30,50,0.08)}
+h1{margin-top:0;font-size:1.6rem;color:#0b486b}
+form label{display:block;margin:10px 0}
+select,input[type=date],input[name=captcha],input[name=court]{padding:8px;border:1px solid #d6e0ef;border-radius:4px;width:100%;box-sizing:border-box}
+button{background:#0b63a5;color:#fff;border:none;padding:10px 14px;border-radius:6px;cursor:pointer}
+button.secondary{background:#6c757d}
+.controls{display:flex;gap:12px;align-items:center}
+.small{font-size:0.9rem;color:#666}
+.results a{color:#0b63a5}
+.footer{margin-top:18px;font-size:0.85rem;color:#666}

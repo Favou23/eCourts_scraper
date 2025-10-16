@@ -1,0 +1,98 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>eCourts Cause List UI</title>
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <div class="container">
+    <h1>eCourts Cause List Downloader</h1>
+    <form method="post" action="/submit">
+      <label>State
+        <select name="state" id="state-select">
+          {% for v,t in options.get('sess_state_code', []) %}
+          <option value="{{v}}">{{t}}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <br/>
+      <label>District
+        <select name="district" id="district-select">
+          <option value="">Select district</option>
+        </select>
+      </label>
+      <br/>
+      <label>Complex
+        <select name="complex" id="complex-select">
+          <option value="">Select complex</option>
+        </select>
+      </label>
+      <br/>
+      <label>Court Name
+        <input name="court" placeholder="Court Name" />
+      </label>
+      <br/>
+      <label>Date
+        <input name="date" type="date" />
+      </label>
+      <br/>
+      <div style="display:flex;gap:12px;align-items:center">
+        <div><img src="/captcha" alt="captcha" style="height:64px;border:1px solid #ddd;padding:6px;background:#fff" /></div>
+        <div style="flex:1"><input name="captcha" placeholder="Enter captcha" /></div>
+      </div>
+      <br/>
+      <div class="controls">
+        <label style="flex:1"><input type="checkbox" name="download" value="1" /> Download PDFs as ZIP</label>
+        <button type="submit">Get Cause List</button>
+      </div>
+    </form>
+    <div class="footer small">Select a State to load Districts & Complexes in real-time. Provide a date and optionally download PDFs as a ZIP.</div>
+    </div>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const stateSelect = document.getElementById('state-select');
+        const districtSelect = document.getElementById('district-select');
+        const complexSelect = document.getElementById('complex-select');
+
+        stateSelect.addEventListener('change', function() {
+          const state = stateSelect.value;
+          districtSelect.innerHTML = '<option value="">Loading...</option>';
+          fetch(`/api/districts?state=${encodeURIComponent(state)}`)
+            .then(r => r.json())
+            .then(data => {
+              districtSelect.innerHTML = '<option value="">Select district</option>';
+              if (data.districts) {
+                data.districts.forEach(d => {
+                  const opt = document.createElement('option');
+                  opt.value = d.value;
+                  opt.textContent = d.text;
+                  districtSelect.appendChild(opt);
+                });
+              }
+              complexSelect.innerHTML = '<option value="">Select complex</option>';
+            });
+        });
+
+        districtSelect.addEventListener('change', function() {
+          const state = stateSelect.value;
+          const district = districtSelect.value;
+          complexSelect.innerHTML = '<option value="">Loading...</option>';
+          fetch(`/api/complexes?state=${encodeURIComponent(state)}&district=${encodeURIComponent(district)}`)
+            .then(r => r.json())
+            .then(data => {
+              complexSelect.innerHTML = '<option value="">Select complex</option>';
+              if (data.complexes) {
+                data.complexes.forEach(c => {
+                  const opt = document.createElement('option');
+                  opt.value = c.value;
+                  opt.textContent = c.text;
+                  complexSelect.appendChild(opt);
+                });
+              }
+            });
+        });
+      });
+    </script>
+  </body>
+</html>
