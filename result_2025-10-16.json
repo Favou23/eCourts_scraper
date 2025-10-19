@@ -1,8 +1,0 @@
-{
-  "error": {
-    "error": "HTTP 400",
-    "status": 400,
-    "url": "https://services.ecourts.gov.in/ecourtindia_v6/causeList/causelists",
-    "text": "Invalid Parameter"
-  }
-}

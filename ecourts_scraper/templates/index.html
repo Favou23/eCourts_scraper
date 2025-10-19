@@ -1,0 +1,200 @@
+
+
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>eCourts Cause List UI</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial; padding: 20px; max-width: 820px; margin: auto; }
+    label { display:block; margin-top: 12px; font-weight:600; }
+    select { width: 100%; padding: 8px; border-radius:6px; border:1px solid #ddd; }
+    .muted { color: #666; font-size: 0.9rem; margin-top:6px; }
+    .debug { margin-top: 16px; padding: 12px; background:#f7f7f7; border: 1px solid #eee; white-space: pre-wrap; font-family: monospace; font-size: 13px; }
+    button { margin-top: 12px; padding: 8px 12px; border-radius:6px; }
+  </style>
+</head>
+<body>
+  <h2>eCourts — Cause List UI </h2>
+
+  <div>
+    <label for="state">State</label>
+    <select id="state"><option value="">Loading states…</option></select>
+
+    <label for="district">District</label>
+    <select id="district" disabled><option value="">Select state first</option></select>
+
+    <label for="complex">Court Complex</label>
+    <select id="complex" disabled><option value="">Select district first</option></select>
+
+    <label for="court">Court / Court No</label>
+    <select id="court" disabled><option value="">Select complex first</option></select>
+
+ 
+    <button id="causelist">causelist</button>
+
+    <div id="debug" class="debug" style="display:none"></div>
+  </div>
+
+<script>
+const stateSelect = document.getElementById('state');
+const districtSelect = document.getElementById('district');
+const complexSelect = document.getElementById('complex');
+const courtSelect = document.getElementById('court');
+const debugEl = document.getElementById('debug');
+const reloadBtn = document.getElementById('reloadStates');
+
+function showDebug(text) {
+  debugEl.style.display = 'block';
+  debugEl.textContent = text || '';
+}
+
+function clearDebug() {
+  debugEl.style.display = 'none';
+  debugEl.textContent = '';
+}
+
+async function fetchStates() {
+  stateSelect.innerHTML = '<option value="">Loading states…</option>';
+  try {
+    const res = await fetch('/api/states');
+    const j = await res.json();
+    if (Array.isArray(j.states) && j.states.length) {
+      stateSelect.innerHTML = '<option value="">Select state</option>' +
+        j.states.map(s => `<option value="${s.value}">${s.text}</option>`).join('');
+    } else {
+      stateSelect.innerHTML = '<option value="">(no states found)</option>';
+      if (j.debug_html) showDebug(j.debug_html);
+    }
+    districtSelect.innerHTML = '<option value="">Select state first</option>';
+    districtSelect.disabled = true;
+    complexSelect.innerHTML = '<option value="">Select district first</option>';
+    complexSelect.disabled = true;
+    courtSelect.innerHTML = '<option value="">Select complex first</option>';
+    courtSelect.disabled = true;
+  } catch (err) {
+    stateSelect.innerHTML = '<option value="">Error loading states</option>';
+    showDebug(String(err));
+  }
+}
+
+async function fetchDistricts(stateVal) {
+  districtSelect.disabled = true;
+  districtSelect.innerHTML = '<option value="">Loading districts…</option>';
+  try {
+    const res = await fetch(`/api/districts?state=${encodeURIComponent(stateVal)}`);
+    const j = await res.json();
+    if (j.districts && j.districts.length) {
+      districtSelect.innerHTML = '<option value="">Select district</option>' +
+        j.districts.map(d => `<option value="${d.value}">${d.text}</option>`).join('');
+      districtSelect.disabled = false;
+      clearDebug();
+    } else {
+      districtSelect.innerHTML = '<option value="">(no districts)</option>';
+      districtSelect.disabled = true;
+      if (j.debug_html) showDebug(j.debug_html);
+    }
+    complexSelect.innerHTML = '<option value="">Select district first</option>';
+    complexSelect.disabled = true;
+    courtSelect.innerHTML = '<option value="">Select complex first</option>';
+    courtSelect.disabled = true;
+  } catch (err) {
+    districtSelect.innerHTML = '<option value="">Error</option>';
+    showDebug(String(err));
+  }
+}
+
+async function fetchComplexes(stateVal, districtVal) {
+  complexSelect.disabled = true;
+  complexSelect.innerHTML = '<option value="">Loading complexes…</option>';
+  try {
+    const res = await fetch(`/api/complexes?state=${encodeURIComponent(stateVal)}&district=${encodeURIComponent(districtVal)}`);
+    const j = await res.json();
+    if (j.complexes && j.complexes.length) {
+      complexSelect.innerHTML = '<option value="">Select complex</option>' +
+        j.complexes.map(c => `<option value="${c.value}">${c.text}</option>`).join('');
+      complexSelect.disabled = false;
+    } else {
+      complexSelect.innerHTML = '<option value="">(no complexes)</option>';
+      complexSelect.disabled = true;
+      if (j.debug_html) showDebug(j.debug_html);
+    }
+    courtSelect.innerHTML = '<option value="">Select complex first</option>';
+    courtSelect.disabled = true;
+  } catch (err) {
+    complexSelect.innerHTML = '<option value="">Error</option>';
+    showDebug(String(err));
+  }
+}
+
+async function fetchCourts(stateVal, districtVal, complexVal) {
+  courtSelect.disabled = true;
+  courtSelect.innerHTML = '<option value="">Loading courts…</option>';
+  try {
+    const res = await fetch(`/api/courts?state=${encodeURIComponent(stateVal)}&district=${encodeURIComponent(districtVal)}&complex=${encodeURIComponent(complexVal)}`);
+    const j = await res.json();
+    if (j.courts && j.courts.length) {
+      courtSelect.innerHTML = '<option value="">Select court</option>' +
+        j.courts.map(c => `<option value="${c.value}">${c.text}</option>`).join('');
+      courtSelect.disabled = false;
+      clearDebug();
+    } else {
+      courtSelect.innerHTML = '<option value="">(no courts)</option>';
+      courtSelect.disabled = true;
+      if (j.debug_html) showDebug(j.debug_html);
+    }
+  } catch (err) {
+    courtSelect.innerHTML = '<option value="">Error</option>';
+    showDebug(String(err));
+  }
+}
+
+// event wiring
+stateSelect.addEventListener('change', (e) => {
+  const val = e.target.value;
+  if (!val) {
+    districtSelect.innerHTML = '<option value="">Select state first</option>';
+    districtSelect.disabled = true;
+    complexSelect.innerHTML = '<option value="">Select district first</option>';
+    complexSelect.disabled = true;
+    courtSelect.innerHTML = '<option value="">Select complex first</option>';
+    courtSelect.disabled = true;
+    return;
+  }
+  fetchDistricts(val);
+});
+
+districtSelect.addEventListener('change', (e) => {
+  const stateVal = stateSelect.value;
+  const districtVal = e.target.value;
+  if (!districtVal) {
+    complexSelect.innerHTML = '<option value="">Select district first</option>';
+    complexSelect.disabled = true;
+    return;
+  }
+  fetchComplexes(stateVal, districtVal);
+});
+
+complexSelect.addEventListener('change', (e) => {
+  const stateVal = stateSelect.value;
+  const districtVal = districtSelect.value;
+  const complexVal = e.target.value;
+  if (!complexVal) {
+    courtSelect.innerHTML = '<option value="">Select complex first</option>';
+    courtSelect.disabled = true;
+    return;
+  }
+  fetchCourts(stateVal, districtVal, complexVal);
+});
+
+reloadBtn.addEventListener('click', () => {
+  fetchStates();
+});
+
+// initial load
+fetchStates();
+</script>
+</body>
+</html>

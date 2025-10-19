@@ -1,125 +1,478 @@
-# eCourts Scraper
+# eCourts Scraper 🏛️
 
-This project implements a CLI and a small web UI that fetches court cause-lists from the official eCourts service and helps you:
+A Python CLI and web application to fetch court case information and cause lists from the official eCourts India service.
 
-- Check whether a case (by CNR or by case type/number/year) is listed today or tomorrow.
-- Show the serial number and court name (if present in the cause list).
-- Optionally download the case PDF if available.
-- Download the entire cause list HTML and (from the UI) download matched PDFs as a ZIP.
+[![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-Important: all data is fetched in real time from the live eCourts site (https://services.ecourts.gov.in/ecourtindia_v6/?p=cause_list/). The server does not store sample select data; dependent selects (districts/complexes) are requested on demand.
+---
 
-## Setup
+## 📑 Table of Contents
 
-Create a virtualenv and install dependencies (PowerShell):
+- [Features](#-features)
+- [Installation](#-installation)
+- [CLI Usage](#-cli-usage)
+  - [Check Case Status](#-check-case-status)
+  - [Browse Available Courts](#%EF%B8%8F-browse-available-courts)
+  - [Download Cause List](#-download-cause-list)
+  - [Search in Cause List](#-search-in-cause-list)
+  - [Download PDFs](#-download-pdfs)
+- [Web UI](#-web-ui)
+- [Command Reference](#-command-reference)
+- [Example Workflow](#-example-workflow)
+- [Important Notes](#-important-notes)
+- [Troubleshooting](#-troubleshooting)
+- [Project Structure](#-project-structure)
+- [Requirements](#-requirements)
+- [Limitations](#%EF%B8%8F-limitations)
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
+---
+
+## ✨ Features
+
+- ✅ **Check case status** by CNR or case details (type/number/year)
+- ✅ **View case listings** for today or tomorrow
+- ✅ **Download cause lists** as HTML or PDF
+- ✅ **Interactive web UI** with dependent dropdowns (State → District → Complex)
+- ✅ **Save results** as JSON for record-keeping
+
+---
+
+## 🚀 Installation
+
+### Prerequisites
+
+- Python 3.8 or higher
+- pip (Python package manager)
+- Virtual environment (recommended)
+
+### Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/yourusername/ecourts_scraper.git
+cd ecourts_scraper
 ```
 
-## CLI usage
+### Step 2: Create Virtual Environment
 
-Check a case by CNR (searches cause list for today by default):
-
+**Windows (PowerShell):**
 ```powershell
-python -m ecourts_scraper.cli check --cnr ABCD1234567890 --when today
+python -m venv venv
+.\venv\Scripts\Activate.ps1
 ```
 
-Search tomorrow's list:
-
-```powershell
-python -m ecourts_scraper.cli check --cnr ABCD1234567890 --when tomorrow
+**Linux/macOS:**
+```bash
+python3 -m venv venv
+source venv/bin/activate
 ```
 
-Check by case type/number/year:
+### Step 3: Install Dependencies
 
-```powershell
-python -m ecourts_scraper.cli check --type "Criminal" --number 123 --year 2024 --when today
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
 ```
 
-Cause list helpers:
+---
 
-- Print initial select options parsed from the landing page:
+## 💻 CLI Usage
 
-```powershell
+The CLI provides several commands to interact with eCourts data.
+
+### 📋 Check Case Status
+
+Check if a case is listed today or tomorrow and retrieve case information.
+
+#### By CNR (Case Number Reference)
+
+```bash
+# Check today's listing
+python -m ecourts_scraper.cli check --cnr "DL01-123456-2025"
+
+# Check tomorrow's listing
+python -m ecourts_scraper.cli check --cnr "DL01-123456-2025" --tomorrow
+
+# Download PDF if available
+python -m ecourts_scraper.cli check --cnr "DL01-123456-2025" --download-pdf
+```
+
+#### By Case Details
+
+```bash
+# Check with case type, number, and year
+python -m ecourts_scraper.cli check --type CRL --number 12345 --year 2025
+
+# Check tomorrow's listing
+python -m ecourts_scraper.cli check --type CRL --number 12345 --year 2025 --tomorrow
+```
+
+**Output:**
+- ✅ Displays case serial number and court name
+- 📄 Saves results to `result_YYYY-MM-DD.json`
+- 🖥️ Shows case details in formatted console output
+
+---
+
+### 🏛️ Browse Available Courts
+
+Get lists of states, districts, and court complexes.
+
+#### List All States
+
+```bash
 python -m ecourts_scraper.cli causelist-options
 ```
 
-- Download cause list HTML for a date (use correct select values as needed):
-
-```powershell
-python -m ecourts_scraper.cli causelist --date today --state 26 --district 12 --complex 345 --est 678 --court-no 9
+**Example Output:**
+```
+States:
+  8 -> Bihar
+  26 -> Delhi
+  23 -> Madhya Pradesh
+  ...
 ```
 
-- Download PDFs for a court complex (first found or all judges):
+#### List Districts for a State
 
-```powershell
-# Download first PDF found for the complex on the date
-python -m ecourts_scraper.cli causelist-download --state 26 --district 12 --complex 345 --date 2025-10-16
-
-# Download all judge PDFs for the complex on the date
-python -m ecourts_scraper.cli causelist-download --state 26 --district 12 --complex 345 --date 2025-10-16 --all-judges
+```bash
+# Example: Get districts for Bihar (state code 8)
+python -m ecourts_scraper.cli causelist-options --state 8
 ```
 
-Notes:
-- Do NOT include angle brackets when passing arguments in PowerShell. Use `--cnr ABCD1234` (not `--cnr <ABCD1234>`).
-- CLI commands save some results as JSON (for example, `check` saves `result_YYYY-MM-DD.json`).
+**Example Output:**
+```
+Districts:
+  26 -> Patna
+  28 -> Gaya
+  15 -> Muzaffarpur
+  ...
+```
 
-## Web UI (recommended for interactive use)
+#### List Court Complexes for a District
 
-Run the Flask UI locally from project root:
+```bash
+# Example: Get complexes for Bihar, Patna district
+python -m ecourts_scraper.cli causelist-options --state 8 --district 26
+```
 
-```powershell
-# Option A: use the convenience script
+> **💡 Tip:** Use the numeric codes from the output in subsequent commands.
+
+---
+
+### 📥 Download Cause List
+
+Download the complete cause list HTML for a specific court and date.
+
+```bash
+# Download today's cause list
+python -m ecourts_scraper.cli causelist --state 8 --district 26 --date today
+
+# Download tomorrow's cause list
+python -m ecourts_scraper.cli causelist --state 8 --district 26 --date tomorrow
+
+# With court complex (optional)
+python -m ecourts_scraper.cli causelist --state 8 --district 26 --complex 1 --date today
+```
+
+**Output:** 
+- 📄 Saves HTML file as `causelist_YYYY-MM-DD.html`
+
+---
+
+### 🔍 Search in Cause List
+
+Search for a specific case in a downloaded cause list.
+
+```bash
+# Search by CNR
+python -m ecourts_scraper.cli search-causelist \
+  --cnr "DL01-123456-2024" \
+  --state 26 \
+  --district 1
+
+# Search by case number or keyword
+python -m ecourts_scraper.cli search-causelist \
+  --query "12345/2024" \
+  --state 26 \
+  --district 1 \
+  --date today
+```
+
+---
+
+### 📄 Download PDFs
+
+Download PDF files for a specific court complex and date.
+
+```bash
+# Download first PDF found
+python -m ecourts_scraper.cli causelist-download \
+  --state 8 \
+  --district 26 \
+  --complex 1 \
+  --date 2025-10-20
+
+# Download all judge PDFs
+python -m ecourts_scraper.cli causelist-download \
+  --state 8 \
+  --district 26 \
+  --complex 1 \
+  --date 2025-10-20 \
+  --all-judges
+```
+
+**Output:** 
+- 📂 Downloads PDF(s) to `downloads/` folder
+
+---
+
+## 🌐 Web UI
+
+Launch the interactive web interface for easier navigation.
+
+### Start the Server
+
+**Option 1: Using the convenience script**
+```bash
 python run_web.py
-
-# Option B: use the flask CLI
-$env:FLASK_APP = 'ecourts_scraper.web'
-$env:FLASK_ENV = 'development'
-python -m flask run
-
-# then open http://127.0.0.1:5000 in your browser
 ```
 
-What the UI provides
-- Real-time dependent selects: when you choose a State the UI requests districts from the server; when you choose a District the UI requests Court Complexes. These calls are live (no cached sample data).
-- CAPTCHA workflow: when you click Get Cause List the UI shows the CAPTCHA image fetched from eCourts; you must type it before the server can POST the cause-list request.
-- PDF ZIP download: check the "Download PDFs as ZIP" checkbox before submitting to have the server fetch all found PDF links and return them as a ZIP attachment.
+**Option 2: Using Flask CLI**
 
-Usage example (browser):
-1. Open the UI, select a State.
-2. Wait for Districts to load, then select a District.
-3. Wait for Complexes to load, optionally enter a Court Name and choose a date.
-4. Type the CAPTCHA you see and either click Get Cause List or check "Download PDFs as ZIP" and submit to download.
+**Windows (CMD):**
+```cmd
+set FLASK_APP=ecourts_scraper.webapi
+flask run
+```
 
-## How it works (implementation notes)
-
-- `ecourts_scraper.scraper.ECourtsScraper.get_cause_list_page()` fetches the landing page and parses initial `<select>` options.
-- `get_dependent_options(state, district)` calls the cause list endpoint with `sess_state_code` and/or `sees_dist_code` to obtain dependent selects in the same way the site's AJAX would.
-- The web UI exposes two AJAX endpoints:
-  - `/api/districts?state=<code>` — returns districts for the state
-  - `/api/complexes?state=<code>&district=<code>` — returns complexes for the state+district
-- On submit, `submit_cause_list_form()` posts the form (using the provided CAPTCHA text) and the server extracts PDF links from the returned HTML. If you requested download, the server downloads the PDF bytes and returns a ZIP.
-
-## Limitations & caveats
-
-- CAPTCHA: you must manually type the CAPTCHA displayed in the UI. If the CAPTCHA is incorrect the eCourts server will reject the request and the UI will display an error.
-- PDF discovery: the scraper looks for direct `.pdf` links in the returned cause list HTML. Some cause lists link to intermediate pages that contain the PDF 
-- Rate-limiting: repeated automated requests to eCourts can trigger rate limits. For bulk downloads, we should add polite rate-limiting and retries.
-
-## Troubleshooting
-
-results.
-- Captcha errors: if the submitted CAPTCHA is wrong you will get an error page. Try refreshing the page (which requests a fresh CAPTCHA) and re-try.
-
-## Tests
-
-Run the unit tests with:
-
+**Windows (PowerShell):**
 ```powershell
-python -m pytest -q
+$env:FLASK_APP="ecourts_scraper.webapi"
+flask run
 ```
 
+**Linux/macOS:**
+```bash
+export FLASK_APP=ecourts_scraper.webapi
+flask run
+```
+
+Then open **http://127.0.0.1:5000** in your browser.
+
+### Using the Web UI
+
+1. **Select State** - Choose from the dropdown
+2. **Select District** - Wait for districts to load, then choose
+3. **Select Court Complex** - Wait for complexes to load, then choose
+4. **Select Court Number** - Choose the specific court
+5. **Pick Date** - Select the date for the cause list
+6. **Submit** - Get the cause list
+
+---
+
+## 📚 Command Reference
+
+### All Available Commands
+
+| Command | Description |
+|---------|-------------|
+| `check` | Check case status by CNR or case details |
+| `search-causelist` | Search for a case in a specific court's cause list |
+| `causelist` | Download full cause list HTML |
+| `causelist-options` | List available states/districts/complexes |
+| `causelist-download` | Download cause list PDFs |
+
+### Get Help for Any Command
+
+```bash
+# General help
+python -m ecourts_scraper.cli --help
+
+# Command-specific help
+python -m ecourts_scraper.cli check --help
+python -m ecourts_scraper.cli causelist-options --help
+python -m ecourts_scraper.cli causelist --help
+```
+
+---
+
+## 🎯 Example Workflow
+
+Here's a complete example of checking a case:
+
+```bash
+# Step 1: Find your state code
+python -m ecourts_scraper.cli causelist-options
+# Output shows: 26 -> Delhi
+
+# Step 2: Find your district code
+python -m ecourts_scraper.cli causelist-options --state 26
+# Output shows: 1 -> Central District
+
+# Step 3: Download today's cause list
+python -m ecourts_scraper.cli causelist --state 26 --district 1 --date today
+# Output: causelist_2025-10-19.html
+
+# Step 4: Search for your case in the downloaded list
+python -m ecourts_scraper.cli search-causelist \
+  --cnr "DL01-123456-2024" \
+  --state 26 \
+  --district 1
+```
+
+---
+
+## 📌 Important Notes
+
+### About CNR Numbers
+
+- **CNR (Case Number Reference)** is a unique identifier for each case
+- **Format:** `STATECODE##-########-YEAR` (e.g., `DL01-123456-2024`)
+- ⚠️ You must use **real CNR numbers** from the eCourts system
+- ⚠️ Test/fake CNRs will return "HTTP 400" errors
+
+### Getting Real CNR Numbers
+
+1. Visit [eCourts India](https://services.ecourts.gov.in/ecourtindia_v6/)
+2. Navigate to **"Case Status"** section
+3. Search for any public case
+4. Copy the CNR from the results
+5. Use that CNR in the CLI commands
+
+### State/District Codes
+
+- Use `causelist-options` command to get valid codes
+- State and district combinations must be valid
+- Invalid combinations will return "HTTP 400" errors
+
+---
+
+## 🔧 Troubleshooting
+
+### Common Errors
+
+#### ❌ HTTP 400 - Invalid Parameter
+
+**Cause:** Invalid CNR, fake case number, or wrong state/district combination
+
+**Solution:** 
+- Use real CNR from eCourts website
+- Verify state/district codes using `causelist-options`
+- Ensure CNR format matches: `STATECODE##-########-YEAR`
+
+#### ❌ File not found
+
+**Cause:** Cause list download failed
+
+**Solution:** 
+- Check state/district codes are valid
+- Ensure date is valid (today or tomorrow)
+- Verify internet connection
+
+#### ❌ No PDF links found
+
+**Cause:** The court hasn't published PDFs for that date
+
+**Solution:** 
+- Try a different date
+- Check the HTML file manually
+- Contact the court to verify PDF availability
+
+### Getting Debug Information
+
+Enable debug mode for detailed output:
+
+**Linux/macOS:**
+```bash
+export DEBUG=1
+python -m ecourts_scraper.cli check --cnr "..."
+```
+
+**Windows (CMD):**
+```cmd
+set DEBUG=1
+python -m ecourts_scraper.cli check --cnr "..."
+```
+
+**Windows (PowerShell):**
+```powershell
+$env:DEBUG=1
+python -m ecourts_scraper.cli check --cnr "..."
+```
+
+---
+
+## 📁 Project Structure
+
+```
+ecourts_scraper/
+├── __init__.py
+├── cli.py              # CLI commands and interface
+├── scraper.py          # Core scraping logic
+├── webapi.py           # Flask web server
+├── utils.py            # Helper functions
+├── templates/          # Web UI HTML templates
+│   └── index.html
+└── static/             # CSS, JS, and assets
+    └── style.css
+
+downloads/              # Downloaded PDF files (auto-created)
+*.html                  # Downloaded cause lists
+*.json                  # Saved results
+```
+
+---
+
+## 📦 Requirements
+
+- **Python:** 3.8 or higher
+- **Core Dependencies:**
+  - `requests` - HTTP requests
+  - `beautifulsoup4` - HTML parsing
+  - `click` - CLI framework
+  - `flask` - Web framework
+  - `flask-cors` - CORS support
+
+See [`requirements.txt`](requirements.txt) for the complete list.
+
+---
+
+## ⚠️ Limitations
+
+- Requires real case data from eCourts (no test/demo mode available)
+- Rate limiting may apply for bulk requests
+- Some courts may not publish cause lists online
+- CAPTCHA handling not implemented (for web automation)
+
+---
+
+## 📄 License
+
+This project is for **educational purposes only**. 
+
+Please respect eCourts terms of service and avoid excessive automated requests that may impact their servers.
+
+---
+
+## 👨‍💻 Author
+
+Developed as part of an internship task - October 2025
+
+---
+
+## 🤝 Support
+
+For issues or questions:
+
+1. ✅ Check the [Troubleshooting](#-troubleshooting) section
+2. ✅ Review command help: `python -m ecourts_scraper.cli <command> --help`
+3. ✅ Verify you're using valid state/district/CNR codes
+4. ✅ Open an issue on GitHub (if repository is public)
+
+---
+
+## 🙏 Acknowledgments
+
+- [eCourts India](https://services.ecourts.gov.in/) for providing the public court data API  
 

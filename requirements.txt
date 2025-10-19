@@ -3,3 +3,4 @@ beautifulsoup4
 click
 pytest
 flask
+playwright>=1.55.0
